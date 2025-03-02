@@ -4,8 +4,8 @@ export const API_BASE_URL =
 
 // Other configuration constants can be added here
 export const API_ENDPOINTS = {
-  debug: `${API_BASE_URL}/api/debug`,
-  analyze: `${API_BASE_URL}/api/analyze`,
-  convert: `${API_BASE_URL}/api/convert`,
-  allInOne: `${API_BASE_URL}/api/all-in-one`,
+  debug: `${API_BASE_URL}/debug`,
+  analyze: `${API_BASE_URL}/analyze-complexity`,
+  convert: `${API_BASE_URL}/convert`,
+  allInOne: `${API_BASE_URL}/all-in-one`,
 };

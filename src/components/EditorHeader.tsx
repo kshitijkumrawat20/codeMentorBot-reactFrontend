@@ -59,7 +59,7 @@ const EditorHeader = ({
 
   const handleConvertTo = (language: string) => {
     setConvertToLanguage(language);
-    onConvertCode();
+    onConvertCode(language);
   };
 
   return (
