@@ -16,6 +16,17 @@ interface CodeMentorInterfaceProps {
   selectedLanguage?: string;
 }
 
+interface Message {
+  id: string;
+  sender: "user" | "ai";
+  content: string;
+  timestamp: Date;
+  codeBlocks?: Array<{
+    language: string;
+    code: string;
+  }>;
+}
+
 const CodeMentorInterface = ({
   className,
   initialCode = '// Write your code here\n\nfunction example() {\n  console.log("Hello, Code Mentor!");\n}\n\nexample();',
@@ -27,7 +38,7 @@ const CodeMentorInterface = ({
   const [loading, setLoading] = useState(false);
 
   // State for chat messages
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   // Handlers for code editor actions
   const handleDebugCode = async () => {
@@ -47,7 +58,7 @@ const CodeMentorInterface = ({
       const data = await response.json();
 
       // Add user message
-      const userMessage = {
+      const userMessage: Message = {
         id: Date.now().toString(),
         sender: "user",
         content: "Debug my code",
@@ -55,7 +66,7 @@ const CodeMentorInterface = ({
       };
 
       // Add AI response
-      const aiMessage = {
+      const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         sender: "ai",
         content: `Debug Results:\n${data.summary}`,
@@ -68,19 +79,19 @@ const CodeMentorInterface = ({
         ],
       };
 
-      setMessages([...messages, userMessage, aiMessage]);
-    } catch (error) {
+      setMessages((prevMessages) => [...prevMessages, userMessage, aiMessage]);
+    } catch (error: any) {
       console.error("Error debugging code:", error);
 
       // Add error message
-      const errorMessage = {
+      const errorMessage: Message = {
         id: Date.now().toString(),
         sender: "ai",
         content: `Error debugging code: ${error.message}`,
         timestamp: new Date(),
       };
 
-      setMessages([...messages, errorMessage]);
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
       setLoading(false);
     }
@@ -103,7 +114,7 @@ const CodeMentorInterface = ({
       const data = await response.json();
 
       // Add user message
-      const userMessage = {
+      const userMessage: Message = {
         id: Date.now().toString(),
         sender: "user",
         content: "Analyze the time and space complexity of my code",
@@ -111,32 +122,32 @@ const CodeMentorInterface = ({
       };
 
       // Add AI response
-      const aiMessage = {
+      const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         sender: "ai",
         content: `Complexity Analysis:\n${data.time_complexity}\n${data.space_complexity}\n\n${data.explanation || ""}`,
         timestamp: new Date(),
       };
 
-      setMessages([...messages, userMessage, aiMessage]);
-    } catch (error) {
+      setMessages((prevMessages) => [...prevMessages, userMessage, aiMessage]);
+    } catch (error: any) {
       console.error("Error analyzing complexity:", error);
 
       // Add error message
-      const errorMessage = {
+      const errorMessage: Message = {
         id: Date.now().toString(),
         sender: "ai",
         content: `Error analyzing complexity: ${error.message}`,
         timestamp: new Date(),
       };
 
-      setMessages([...messages, errorMessage]);
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleConvertCode = async (targetLang) => {
+  const handleConvertCode = async (targetLang: string) => {
     setLoading(true);
     try {
       const response = await fetch(API_ENDPOINTS.convert, {
@@ -154,7 +165,7 @@ const CodeMentorInterface = ({
       const data = await response.json();
 
       // Add user message
-      const userMessage = {
+      const userMessage: Message = {
         id: Date.now().toString(),
         sender: "user",
         content: `Convert my ${language} code to ${targetLang}`,
@@ -162,7 +173,7 @@ const CodeMentorInterface = ({
       };
 
       // Add AI response
-      const aiMessage = {
+      const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         sender: "ai",
         content: `Converted Code (${targetLang}):`,
@@ -175,19 +186,19 @@ const CodeMentorInterface = ({
         ],
       };
 
-      setMessages([...messages, userMessage, aiMessage]);
-    } catch (error) {
+      setMessages((prevMessages) => [...prevMessages, userMessage, aiMessage]);
+    } catch (error: any) {
       console.error("Error converting code:", error);
 
       // Add error message
-      const errorMessage = {
+      const errorMessage: Message = {
         id: Date.now().toString(),
         sender: "ai",
         content: `Error converting code: ${error.message}`,
         timestamp: new Date(),
       };
 
-      setMessages([...messages, errorMessage]);
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
       setLoading(false);
     }
@@ -196,12 +207,70 @@ const CodeMentorInterface = ({
   const handleAllInOne = async () => {
     setLoading(true);
     try {
-      // For now, we'll just call debug and analyze in sequence
-      // You can implement a dedicated all-in-one endpoint later
-      await handleDebugCode();
-      await handleAnalyzeComplexity();
-    } catch (error) {
+      // Add user message first
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        sender: "user",
+        content: "Perform a comprehensive analysis of my code",
+        timestamp: new Date(),
+      };
+
+      setMessages((prevMessages) => [...prevMessages, userMessage]);
+
+      // Make API calls in sequence
+      const debugResponse = await fetch(API_ENDPOINTS.debug, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code: code,
+          source_lang: language,
+        }),
+      });
+
+      const debugData = await debugResponse.json();
+
+      const analyzeResponse = await fetch(API_ENDPOINTS.analyze, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code: code,
+          source_lang: language,
+        }),
+      });
+
+      const analyzeData = await analyzeResponse.json();
+
+      // Combine results into one comprehensive message
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: "ai",
+        content: `# Comprehensive Code Analysis\n\n## Debug Results\n${debugData.summary || "No debug summary available"}\n\n## Complexity Analysis\n${analyzeData.time_complexity || "Time complexity: Unknown"}\n${analyzeData.space_complexity || "Space complexity: Unknown"}\n\n${analyzeData.explanation || ""}`,
+        timestamp: new Date(),
+        codeBlocks: [
+          {
+            language: language,
+            code: debugData.fixed_code || code,
+          },
+        ],
+      };
+
+      setMessages((prevMessages) => [...prevMessages, aiMessage]);
+    } catch (error: any) {
       console.error("Error in all-in-one analysis:", error);
+
+      // Add error message
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        sender: "ai",
+        content: `Error performing comprehensive analysis: ${error.message}`,
+        timestamp: new Date(),
+      };
+
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
       setLoading(false);
     }
@@ -217,27 +286,27 @@ const CodeMentorInterface = ({
 
   const handleSendMessage = (message: string) => {
     // Add user message
-    const userMessage = {
+    const userMessage: Message = {
       id: Date.now().toString(),
       sender: "user",
       content: message,
       timestamp: new Date(),
     };
 
-    setMessages([...messages, userMessage]);
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
 
     // For now, we'll just echo the message back
     // In a real app, you'd send this to your AI backend
     setLoading(true);
     setTimeout(() => {
-      const aiMessage = {
+      const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         sender: "ai",
         content: `I received your message: "${message}". You can use the buttons above to analyze your code.`,
         timestamp: new Date(),
       };
 
-      setMessages([...messages, userMessage, aiMessage]);
+      setMessages((prevMessages) => [...prevMessages, aiMessage]);
       setLoading(false);
     }, 1000);
   };
